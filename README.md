@@ -2,13 +2,16 @@ iot-lab-monkey
 
 needs an installation of `iot-lab-client`
 
-to launch integration tests on `devwww.iot-lab.info` :
+to install the needed dependencies
 
 ```
 pip install -r requirements.txt
+```
+
+to launch integration tests on `devwww.iot-lab.info` :
+
+```
 pytest
 ```
 
-you can modify the target master server using the IOTLAB_HOST environement variable, e.g.
-
-IOTLAB_HOST=www.iot-lab.info/api pytest 
+you can modify the target master server by passing a IOTLAB_HOST environement variable.
