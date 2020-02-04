@@ -1,3 +1,33 @@
+*~
 *.pyc
-__pycache__
-\.idea/
+dist
+build
+MANIFEST
+iotlabmonkey.egg-info
+.tox
+
+*.egg
+*.swp
+.coverage
+coverage.xml
+cover/
+htmlcov/
+
+.eggs/
+.python-version
+test_auth_file
+*log
+
+*json
+*png
+
+*.tar.gz
+
+# pytest cache directory
+.cache/
+.pytest_cache/
+test-report.xml
+
+# IDE
+.idea/
+.vscode/
