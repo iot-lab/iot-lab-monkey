@@ -1,0 +1,13 @@
+{
+    "molotov": {
+	"tests": {
+	    "get_nodes": {
+		"exception": true,
+		"duration": 60,
+		"workers": 10,
+		"processes": 5,
+		"scenario": "iotlabmonkey.get_nodes"
+	    }
+	}
+    }
+}

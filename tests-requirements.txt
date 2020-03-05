@@ -1,0 +1,8 @@
+pytest>=3.0
+pytest-pep8
+pytest-cov
+setuptools-lint
+pylint>=1.8,<2
+mock
+codecov>=1.4.0
+

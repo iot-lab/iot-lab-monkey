@@ -17,7 +17,7 @@
 #
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
-""" Get experiments scenario test """
+""" Get nodes scenario test """
 
 from urllib.parse import urljoin
 import molotov
@@ -31,33 +31,11 @@ def init_test(args): #pylint: disable=W0613
     molotov.set_var('auth', get_auth())
 
 
-@molotov.events()
-async def print_response(event, **info):
-    """ Receive response event """
-    if event == 'response_received':
-        data = await info['response'].json()
-        print(data)
-
-
-@molotov.scenario(weight=50)
-async def get_experiments_total(session):
-    """ Scenario get total experiments """
+@molotov.scenario(weight=100)
+async def get_nodes(session):
+    """ Get nodes scenario """
     async with session.get(
-        urljoin(molotov.get_var('url'), 'experiments/total'),
-        auth=molotov.get_var('auth'),
-    ) as resp:
-        res = await resp.json()
-        assert res['running'] is not None
-        assert res['terminated'] is not None
-        assert res['upcoming'] is not None
-        assert resp.status == 200
-
-
-@molotov.scenario(weight=50)
-async def get_experiments_running(session):
-    """ Get experiments scenario """
-    async with session.get(
-        urljoin(molotov.get_var('url'), 'experiments/running'),
+        urljoin(molotov.get_var('url'), 'nodes'),
         auth=molotov.get_var('auth'),
     ) as resp:
         res = await resp.json()

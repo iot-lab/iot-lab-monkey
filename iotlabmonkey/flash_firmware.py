@@ -18,24 +18,21 @@
 #
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
-""" Submit experiment scenario test """
+""" Flash firmware scenario test """
 
 from urllib.parse import urljoin
 import molotov
+import aiohttp
 from aiohttp import FormData
-from iotlabcli.experiment import _Experiment, AliasNodes
-from iotlabcli.helpers import json_dumps
-from .helpers import get_api_url, get_auth, generate_exp_name
-from .helpers import get_test_site, get_test_users
+from .helpers import get_api_url
+from .helpers import get_test_experiments
 
 
 @molotov.global_setup()
 def init_test(args): #pylint: disable=W0613
     """ Adding test fixtures """
     molotov.set_var('url', get_api_url())
-    molotov.set_var('auth', get_auth())
-    molotov.set_var('site', get_test_site())
-    molotov.set_var('users', get_test_users())
+    molotov.set_var('exp', get_test_experiments())
 
 
 @molotov.events()
@@ -47,25 +44,28 @@ async def print_response(event, **info):
 
 
 @molotov.scenario(weight=100)
-async def submit_experiment(session):
-    """ Submit experiment scenario """
-    users = molotov.get_var('users')
-    if users.empty():
-        print("No users ...")
+async def flash_firmware(session):
+    """ Flash firmware scenario """
+    experiments = molotov.get_var('exp')
+    if experiments.empty():
+        print("No experiments ...")
         assert False
-    user = users.get()
-    exp = _Experiment(name=generate_exp_name(),
-                      duration=20)
-    alias = AliasNodes(1, molotov.get_var('site'), 'm3:at86rf231', False)
-    exp.set_alias_nodes(alias)
+    # exp = (exp_id, login)
+    exp = experiments.get()
+    # password = Monkey-<login>
+    auth = aiohttp.BasicAuth(exp[1], 'Monkey-{}'.format(exp[1]))
     form = FormData()
-    form.add_field("exp", json_dumps(exp),
-                   content_type="multipart/form-data")
+    form.add_field('file',
+                   open('iotlabmonkey/firmware/tutorial_m3.elf', 'rb'),
+                   filename="tutorial_m3",
+                   content_type="application/octet-stream")
+    url_flash = 'experiments/{}/nodes/flash'
     async with session.post(
-        urljoin(molotov.get_var('url'), 'experiments/{}'.format(user)),
-        auth=molotov.get_var('auth'),
+        urljoin(molotov.get_var('url'), url_flash.format(exp[0])),
+        auth=auth,
         data=form,
     ) as resp:
         res = await resp.json()
-        assert res['id'] is not None
+        if not "0" in res and not "1" in res:
+            assert False
         assert resp.status == 200

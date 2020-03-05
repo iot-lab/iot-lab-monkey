@@ -67,3 +67,10 @@ different pace.
 .. code-block::
 
     $ molotov --sizing iotlabmonkey.<module_test_name>
+
+You can also store the test configuration (duration, workers, ...) in a JSON file
+and launch it directly in this way:
+
+.. code-block::
+
+    $ molotov --config molotov.json <test_name>

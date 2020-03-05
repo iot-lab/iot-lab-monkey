@@ -18,15 +18,12 @@
 #
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
-""" Submit experiment scenario test """
+""" Delete user scenario test """
 
 from urllib.parse import urljoin
 import molotov
-from aiohttp import FormData
-from iotlabcli.experiment import _Experiment, AliasNodes
-from iotlabcli.helpers import json_dumps
-from .helpers import get_api_url, get_auth, generate_exp_name
-from .helpers import get_test_site, get_test_users
+from .helpers import get_api_url, get_auth
+from .helpers import get_test_users
 
 
 @molotov.global_setup()
@@ -34,38 +31,20 @@ def init_test(args): #pylint: disable=W0613
     """ Adding test fixtures """
     molotov.set_var('url', get_api_url())
     molotov.set_var('auth', get_auth())
-    molotov.set_var('site', get_test_site())
     molotov.set_var('users', get_test_users())
 
 
-@molotov.events()
-async def print_response(event, **info):
-    """ Receive response event """
-    if event == 'response_received':
-        data = await info['response'].json()
-        print(data)
-
-
 @molotov.scenario(weight=100)
-async def submit_experiment(session):
-    """ Submit experiment scenario """
+async def delete_user(session):
+    """ Delete user scenario """
     users = molotov.get_var('users')
     if users.empty():
         print("No users ...")
         assert False
     user = users.get()
-    exp = _Experiment(name=generate_exp_name(),
-                      duration=20)
-    alias = AliasNodes(1, molotov.get_var('site'), 'm3:at86rf231', False)
-    exp.set_alias_nodes(alias)
-    form = FormData()
-    form.add_field("exp", json_dumps(exp),
-                   content_type="multipart/form-data")
-    async with session.post(
-        urljoin(molotov.get_var('url'), 'experiments/{}'.format(user)),
+    async with session.delete(
+        urljoin(molotov.get_var('url'), 'users/{}'.format(user)),
         auth=molotov.get_var('auth'),
-        data=form,
+        params={'mailing-list': 'off'}
     ) as resp:
-        res = await resp.json()
-        assert res['id'] is not None
-        assert resp.status == 200
+        assert resp.status == 204

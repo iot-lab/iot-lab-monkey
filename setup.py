@@ -27,11 +27,9 @@ PACKAGE = 'iotlabmonkey'
 # GPL compatible http://www.gnu.org/licenses/license-list.html#CeCILL
 LICENSE = 'CeCILL v2.1'
 
-
-def cat(files, join_str=''):
-    """Concatenate `files` content with `join_str` between them."""
-    files_content = (open(f).read() for f in files)
-    return join_str.join(files_content)
+def readme(fname):
+    """Utility function to read the README. Used for long description."""
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
 def get_version(package):
@@ -48,13 +46,11 @@ def get_version(package):
                 return eval(line.split('=')[-1])  # pylint:disable=eval-used
 
 
-LONG_DESCRIPTION_FILES = ['README.rst', 'CHANGELOG.rst']
-
 setup(
     name=PACKAGE,
     version=get_version(PACKAGE),
     description='IoT-LAB testbed monkey load tests',
-    long_description=cat(LONG_DESCRIPTION_FILES, u'\n\n'),
+    long_description=readme('README.rst'),
     author='IoT-LAB Team',
     author_email='admin@iot-lab.info',
     url='http://www.iot-lab.info',
