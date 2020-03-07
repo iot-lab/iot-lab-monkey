@@ -22,6 +22,7 @@
 
 from urllib.parse import urljoin
 import molotov
+import aiohttp
 from aiohttp import FormData
 from iotlabcli.experiment import _Experiment, AliasNodes
 from iotlabcli.helpers import json_dumps
@@ -54,6 +55,8 @@ async def submit_experiment(session):
         print("No users ...")
         assert False
     user = users.get()
+    # password = Monkey-<login>
+    auth = aiohttp.BasicAuth(user, 'Monkey-{}'.format(user))
     exp = _Experiment(name=generate_exp_name(),
                       duration=20)
     alias = AliasNodes(1, molotov.get_var('site'), 'm3:at86rf231', False)
@@ -62,8 +65,8 @@ async def submit_experiment(session):
     form.add_field("exp", json_dumps(exp),
                    content_type="multipart/form-data")
     async with session.post(
-        urljoin(molotov.get_var('url'), 'experiments/{}'.format(user)),
-        auth=molotov.get_var('auth'),
+        urljoin(molotov.get_var('url'), 'experiments'),
+        auth=auth,
         data=form,
     ) as resp:
         res = await resp.json()
