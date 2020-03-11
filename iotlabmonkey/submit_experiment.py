@@ -22,21 +22,22 @@
 
 from urllib.parse import urljoin
 import molotov
-import aiohttp
 from aiohttp import FormData
 from iotlabcli.experiment import _Experiment, AliasNodes
 from iotlabcli.helpers import json_dumps
 from .helpers import get_api_url, get_auth, generate_exp_name
 from .helpers import get_test_site, get_test_users
+from .config import get_config
 
 
 @molotov.global_setup()
 def init_test(args): #pylint: disable=W0613
     """ Adding test fixtures """
+    config = get_config()
+    molotov.set_var('config', config)
     molotov.set_var('url', get_api_url())
-    molotov.set_var('auth', get_auth())
-    molotov.set_var('site', get_test_site())
-    molotov.set_var('users', get_test_users())
+    molotov.set_var('site', get_test_site(config))
+    molotov.set_var('users', get_test_users(config['users']))
 
 
 @molotov.events()
@@ -55,18 +56,18 @@ async def submit_experiment(session):
         print("No users ...")
         assert False
     user = users.get()
-    # password = Monkey-<login>
-    auth = aiohttp.BasicAuth(user, 'Monkey-{}'.format(user))
+    config = molotov.get_var('config')['experiments']
     exp = _Experiment(name=generate_exp_name(),
-                      duration=20)
-    alias = AliasNodes(1, molotov.get_var('site'), 'm3:at86rf231', False)
+                      duration=config['duration'])
+    alias = AliasNodes(config['nb_nodes'], molotov.get_var('site'), 'm3:at86rf231', False)
     exp.set_alias_nodes(alias)
     form = FormData()
     form.add_field("exp", json_dumps(exp),
-                   content_type="multipart/form-data")
+                   content_type="application/json")
     async with session.post(
         urljoin(molotov.get_var('url'), 'experiments'),
-        auth=auth,
+        # password = Monkey-<login>
+        auth=get_auth(user, 'Monkey-{}'.format(user)),
         data=form,
     ) as resp:
         res = await resp.json()

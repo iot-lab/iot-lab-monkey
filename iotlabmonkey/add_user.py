@@ -24,6 +24,7 @@ from urllib.parse import urljoin
 import molotov
 from .helpers import get_api_url, get_auth
 from .helpers import generate_test_users
+from .config import get_config
 
 
 @molotov.global_setup()
@@ -31,7 +32,7 @@ def init_test(args): #pylint: disable=W0613
     """ Adding test fixtures """
     molotov.set_var('url', get_api_url())
     molotov.set_var('auth', get_auth())
-    molotov.set_var('users', generate_test_users())
+    molotov.set_var('users', generate_test_users(get_config()))
 
 
 @molotov.events()

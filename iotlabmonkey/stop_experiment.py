@@ -22,8 +22,7 @@
 
 from urllib.parse import urljoin
 import molotov
-import aiohttp
-from .helpers import get_api_url
+from .helpers import get_api_url, get_auth
 from .helpers import get_test_experiments
 
 
@@ -49,13 +48,12 @@ async def stop_experiment(session):
     if experiments.empty():
         print("No experiments ...")
         assert False
-     # exp = (exp_id, login)
+    # exp = (exp_id, login)
     exp = experiments.get()
     # password = Monkey-<login>
-    auth = aiohttp.BasicAuth(exp[1], 'Monkey-{}'.format(exp[1]))
     async with session.delete(
         urljoin(molotov.get_var('url'), 'experiments/{}'.format(exp[0])),
-        auth=auth,
+        auth=get_auth(exp[1], 'Monkey-{}'.format(exp[1])),
     ) as resp:
         res = await resp.json()
         assert res['id'] is not None

@@ -6,6 +6,9 @@ MANIFEST
 iotlabmonkey.egg-info
 .tox
 
+# SSH public/private key
+ssh
+
 *.egg
 *.swp
 .coverage

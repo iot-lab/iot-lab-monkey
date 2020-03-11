@@ -1,0 +1,18 @@
+{
+    "site": "grenoble",
+    "users":{
+        "group": "monkey-test",
+        "max-num": 3000
+    },
+    "experiments":{
+        "duration": 20,
+        "nb_nodes": 1
+    },
+    "flash_firmware":{
+        "firmware": "tutorial_m3.elf"
+    },
+    "serial_port":{
+        "firmware": "gnrc_networking.elf",
+        "cmd": "echo ifconfig"
+    }
+}

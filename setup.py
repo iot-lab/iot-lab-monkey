@@ -55,7 +55,7 @@ setup(
     author_email='admin@iot-lab.info',
     url='http://www.iot-lab.info',
     license=LICENSE,
-    download_url='http://github.com/iot-lab/cli-tools/',
+    download_url='http://github.com/iot-lab/iot-lab-monkey/',
     packages=find_packages(),
     include_package_data=True,
     classifiers=['Development Status :: 4 - Beta',
@@ -68,6 +68,6 @@ setup(
                  'Intended Audience :: End Users/Desktop',
                  'Environment :: Console',
                  'Topic :: Utilities', ],
-    install_requires=['iotlabcli', 'molotov', 'aiohttp<=3.6.2'],
+    install_requires=['iotlabcli', 'molotov', 'aiohttp<=3.6.2', 'asyncssh'],
     python_requires='>=3.5',
 )
