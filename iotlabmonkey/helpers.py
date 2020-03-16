@@ -34,7 +34,7 @@ import asyncssh
 
 SSH_KEY_PATH = 'iotlabmonkey/ssh'
 SSH_KEY = '{}/id_rsa_test'.format(SSH_KEY_PATH)
-API_URL = 'https//www.iot-lab.info/api'
+API_URL = 'https://www.iot-lab.info/api/'
 
 
 def get_api_url():
@@ -57,6 +57,7 @@ def get_test_users(config):
                                   auth=get_auth())['content']
     group = [group for group in groups if group['name'] == config['group']]
     # check if group exists
+    print(group)
     if group:
         for user in group[0]['users']:
             users.put(user)
@@ -156,6 +157,6 @@ def create_test_user(config, username, ssh_public_key):
             'login': username,
             # add one special and uppercase character
             'password': 'Monkey-{}'.format(username),
-            'groups': config['users']['group'],
+            'groups': [config['users']['group']],
             'sshkeys': [ssh_public_key],
             'email': '{}@monkey.fr'. format(username)}
