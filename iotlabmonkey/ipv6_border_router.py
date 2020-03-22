@@ -19,31 +19,33 @@
 # knowledge of the CeCILL license and that you accept its terms.
 """ IPv6 border router scenario test """
 
+import re
 import asyncio
 import molotov
+from .config import get_config
 from .helpers import get_test_ssh_key
 from .helpers import get_test_experiments
 from .helpers import get_api_url, get_auth, get_ipv6_prefix
 from .scenario_test import get_experiment_nodes, flash_firmware
+from .helpers import generate_riot_firmwares, get_test_firmwares
 from .scenario_test import send_ssh_command
+
 
 @molotov.global_setup()
 def init_test(args): #pylint: disable=W0613
     """ Adding test fixtures """
     molotov.set_var('url', get_api_url())
+    config = get_config()['riot_firmwares']
+    generate_riot_firmwares(config['firmwares'],
+                            config['nb_firmwares'])
+    firmwares = get_test_firmwares(config['firmwares'])
+    molotov.set_var('firmwares', firmwares)
     molotov.set_var('sshkey', get_test_ssh_key())
     molotov.set_var('exp', get_test_experiments())
     molotov.set_var('ipv6', get_ipv6_prefix())
 
 
-@molotov.events()
-async def print_response(event, **info):
-    """ Receive response event """
-    if event == 'response_received':
-        data = await info['response'].json()
-        print(data)
-
-
+# pylint: disable-msg=too-many-locals
 @molotov.scenario(weight=100)
 async def ipv6_border_router(session):
     """ IPv6 border router scenario """
@@ -53,6 +55,13 @@ async def ipv6_border_router(session):
         assert False
     # exp = (exp_id, login)
     exp = experiments.get()
+    firmwares = molotov.get_var('firmwares')
+    if firmwares.empty():
+        print("No firmwares ...")
+        assert False
+    # firmware = {"firm1_name": "firm1_path",
+    #             "firm2_name": "firm2_path"}
+    firmware = firmwares.get()
     auth = get_auth(exp[1], 'Monkey-{}'.format(exp[1]))
     # Get nodes
     nodes = await asyncio.wait_for(
@@ -62,39 +71,72 @@ async def ipv6_border_router(session):
                              exp[0]),
         timeout=120)
     # Get BR node
-    node = nodes.pop()
-    print('BR node: {}'.format(node['network_address']))
-    firm_path = 'iotlabmonkey/firmwares/{}'
-    # Flash BR node
-    await asyncio.wait_for(
-        flash_firmware(session,
-                       molotov.get_var('url'),
-                       auth,
-                       exp[0],
-                       firm_path.format('gnrc_border_router.elf'),
-                       nodes=[node['network_address']]),
-        timeout=120)
+    br_node = nodes.pop()
     # Flash other nodes
+    firm = firmware['gnrc_networking']
     await asyncio.wait_for(
         flash_firmware(session,
                        molotov.get_var('url'),
                        auth,
                        exp[0],
-                       firm_path.format('gnrc_networking.elf'),
+                       firm,
                        nodes=[node['network_address'] for node in nodes]),
+        timeout=120)
+    # Flash BR node
+    firm_br = firmware['gnrc_border_router']
+    await asyncio.wait_for(
+        flash_firmware(session,
+                       molotov.get_var('url'),
+                       auth,
+                       exp[0],
+                       firm_br,
+                       nodes=[br_node['network_address']]),
         timeout=120)
     # Launch ethos_uhcpd
     # ipv6 = (tap_id, fdxx)
     ipv6 = molotov.get_var('ipv6').get()
     cmd = 'nohup sudo ethos_uhcpd.py {} tap{} {}::1/64 > /dev/null 2>&1 &'
-    ethos_uhcpd_cmd = cmd.format(node['network_address'].split('.')[0],
+    ethos_uhcpd_cmd = cmd.format(br_node['network_address'].split('.')[0],
                                  ipv6[0],
                                  ipv6[1])
     print(ethos_uhcpd_cmd)
-    #ipv6_addr = fd02::245f:f965:106b:1114
     await asyncio.wait_for(
-        send_ssh_command(node['network_address'],
+        send_ssh_command(br_node['network_address'],
                          exp[1],
                          molotov.get_var('sshkey'),
                          ethos_uhcpd_cmd),
         timeout=120)
+    # wait DIO message BR -> node
+    await asyncio.sleep(20)
+    # Get one node
+    node = nodes.pop()
+    # Launch ifconfig command on the serial port
+    ifconfig_cmd = '{} | nc -q 3 {} 20000'.format('echo ifconfig',
+                                                  node['network_address'])
+    output = await asyncio.wait_for(
+        send_ssh_command(node['network_address'],
+                         exp[1],
+                         molotov.get_var('sshkey'),
+                         ifconfig_cmd),
+        timeout=120)
+    if output:
+        #inet6 addr: fe80::14b5:f765:106b:1115  scope: link  VAL
+        #inet6 addr: fd00::14b5:f765:106b:1115  scope: global  VAL
+        ipv6_addr = ipv6[1] + ':(:[0-9a-f]{0,4}){0,4}'
+        ipv6_priv = ''
+        for line in output.splitlines():
+            if 'scope: global' in line:
+                ipv6_priv = (re.search(re.compile(r'{}'.format(ipv6_addr)),
+                                       line)).group()
+        if ipv6_priv:
+            # Launch ping6 command from the frontend SSH
+            ping6_cmd = 'ping6 -c 1 {}'.format(ipv6_priv)
+            output = await asyncio.wait_for(
+                send_ssh_command(node['network_address'],
+                                 exp[1],
+                                 molotov.get_var('sshkey'),
+                                 ping6_cmd),
+                timeout=120)
+            print(output)
+        else:
+            print('IPv6 global address not found')
