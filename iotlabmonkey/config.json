@@ -6,7 +6,7 @@
     },
     "experiments":{
         "duration": 20,
-        "nb_nodes": 1
+        "nb_nodes": 2
     },
     "flash_firmware":{
         "firmware": "tutorial_m3.elf"
@@ -14,5 +14,9 @@
     "serial_port":{
         "firmware": "gnrc_networking.elf",
         "cmd": "echo ifconfig"
+    },
+    "riot_firmwares":{
+        "firmwares": ["gnrc_networking", "gnrc_border_router"],
+        "nb_firmwares": 10
     }
 }

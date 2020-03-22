@@ -68,6 +68,6 @@ setup(
                  'Intended Audience :: End Users/Desktop',
                  'Environment :: Console',
                  'Topic :: Utilities', ],
-    install_requires=['iotlabcli', 'molotov', 'aiohttp<=3.6.2', 'asyncssh'],
+    install_requires=['iotlabcli', 'molotov', 'aiohttp<=3.6.2', 'asyncssh', 'gitpython'],
     python_requires='>=3.5',
 )

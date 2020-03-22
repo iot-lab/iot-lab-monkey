@@ -8,6 +8,8 @@ iotlabmonkey.egg-info
 
 # SSH public/private key
 ssh
+# RIOT firmwares
+riot
 
 *.egg
 *.swp
