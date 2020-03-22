@@ -19,6 +19,7 @@
 # knowledge of the CeCILL license and that you accept its terms.
 """ Scenario test """
 
+from os.path import basename, splitext
 from urllib.parse import urljoin
 import json
 import asyncssh
@@ -44,12 +45,20 @@ async def flash_firmware(session, url, auth, exp_id, firm_path, nodes=None):
     form = FormData()
     form.add_field('file',
                    open(firm_path, 'rb'),
-                   filename="firmware",
+                   filename=basename(firm_path),
                    content_type="application/octet-stream")
-    if nodes:
+    if splitext(firm_path)[1] == '.bin' and nodes:
+        nodes_binary = {}
+        nodes_binary['nodes'] = nodes
+        nodes_binary['offset'] = 0
+        form.add_field("nodes", json.dumps(nodes_binary),
+                       content_type="application/json")
+    elif nodes:
         form.add_field("nodes", json.dumps(nodes),
                        content_type="application/json")
     url_flash = 'experiments/{}/nodes/flash'.format(exp_id)
+    if splitext(firm_path)[1] == '.bin':
+        url_flash += '/binary'
     async with session.post(
         urljoin(url, url_flash),
         auth=auth,
@@ -67,11 +76,14 @@ async def send_ssh_command(node, login, keys, cmd):
     try:
         async with asyncssh.connect(frontend_fqdn,
                                     username=login,
+                                    known_hosts=None,
                                     client_keys=[keys]) as conn:
             result = await conn.run(cmd)
-            if result.exit_status == 0:
+            if result.exit_status == 0 and result.stdout:
                 return result.stdout
-            return result.stderr
+            elif result.stderr:
+                print('Error: ' + result.stderr)
+            return None
     except (OSError, asyncssh.Error) as exc:
         print('SSH connection failed: ' + str(exc))
         assert False
