@@ -71,7 +71,7 @@ async def serial_port(session):
     # Launch ifconfig command on the serial port
     #serial_cmd = '{} | socat - tcp:{}:20000'.format(config['cmd'],
     #                                                node['network_address'])
-    serial_cmd = '{} | nc -q 1 {} 20000'.format(config['cmd'],
+    serial_cmd = '{} | nc -q 3 {} 20000'.format(config['cmd'],
                                                 node['network_address'])
     output = await asyncio.wait_for(
         send_ssh_command(node['network_address'],
